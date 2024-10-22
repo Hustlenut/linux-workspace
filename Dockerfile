@@ -11,8 +11,6 @@ RUN apk add --no-cache \
     make \
     cmake \
     ripgrep \
-    python3 \
-    py3-pip \
     xclip \
     fish \
     curl \
@@ -32,11 +30,6 @@ RUN git clone --recurse-submodules https://github.com/helix-editor/helix.git /ro
 # Compile from source
 RUN cd /root/helix \
     && cargo install --path helix-term --locked
-
-# Create a virtual environment for Python LSP
-RUN python3 -m venv /root/venv \
-    && . /root/venv/bin/activate \
-    && pip install 'python-lsp-server[all]'
 
 # Install Node.js-based language servers
 RUN apk add --no-cache nodejs npm \
@@ -71,5 +64,5 @@ RUN wget https://github.com/jesseduffield/lazygit/releases/download/v0.41.0/lazy
     && mv lazygit /usr/local/bin/ \
     && rm lazygit_0.41.0_Linux_x86_64.tar.gz
 
-# Activate venv for pylsp and use fish
-ENTRYPOINT ["/bin/sh", "-c", "source /root/venv/bin/activate && exec fish"]
+# Use fish
+ENTRYPOINT ["/bin/sh", "-c", "exec fish"]
