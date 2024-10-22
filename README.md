@@ -5,6 +5,7 @@
 
 This is a workspace suite in the command line, containing the following setup:
 - Helix
+  - with following LSPs: Docker, bash and for the programming language of current branch.
 - Lazygit
 - Ripgrep
 
