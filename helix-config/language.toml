@@ -1,0 +1,15 @@
+[[language]]
+name = "python"
+scope = "source.python"
+injection-regex = "python"
+file-types = ["py", "pyi", "py3", "pyw", "ptl", "pyx", "pxd", "pxi"]
+shebangs = ["python", "python3"]
+roots = ["pyproject.toml", "setup.py", "Poetry.lock", "pyrightconfig.json"]
+comment-token = "#"
+language-servers = [ "pylsp" ]
+
+[language-server.pylsp]
+command = "pylsp"
+
+[keymap]
+"space+s" = "lsp.symbols"
