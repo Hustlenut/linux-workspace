@@ -41,10 +41,6 @@ RUN python3 -m venv /root/venv \
     && . /root/venv/bin/activate \
     && pip install 'python-lsp-server[all]'
 
-# Install Node.js-based language servers
-RUN apk add --no-cache nodejs npm \
-    && npm install -g bash-language-server dockerfile-language-server-nodejs markdownlint-cli
-
 # Fetch and build Helix grammars
 RUN hx --grammar fetch && hx --grammar build
 
