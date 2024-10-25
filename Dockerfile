@@ -34,10 +34,6 @@ RUN git clone --recurse-submodules https://github.com/helix-editor/helix.git /ro
 RUN cd /root/helix \
     && cargo install --path helix-term --locked
 
-# Install Node.js-based language servers
-RUN apk add --no-cache nodejs npm \
-    && npm install -g bash-language-server dockerfile-language-server-nodejs markdownlint-cli
-
 # Fetch and build Helix grammars
 RUN hx --grammar fetch && hx --grammar build
 
@@ -67,15 +63,13 @@ RUN apk add --no-cache \
     ripgrep \
     xclip \
     fish \
+    npm \
+    && pip install 'python-lsp-server[all]' \
+    && npm install -g bash-language-server dockerfile-language-server-nodejs markdownlint-cli
 
 # Copy Helix configuration files
 COPY helix-config/config.toml /root/.config/helix/config.toml
 COPY helix-config/language.toml /root/.config/helix/language.toml
-
-# Copy Node.js-based language servers
-COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=builder /usr/bin/node /usr/bin/node
-COPY --from=builder /usr/bin/npm /usr/bin/npm
 
 # Set environment variables for Helix and shell
 ENV PATH="/root/.cargo/bin:${PATH}"
