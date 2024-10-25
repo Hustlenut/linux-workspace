@@ -60,6 +60,7 @@ COPY --from=builder /usr/local/bin/lazygit /usr/local/bin/lazygit
 
 # Install runtime dependencies only
 RUN apk add --no-cache \
+    git \
     ripgrep \
     xclip \
     fish \
