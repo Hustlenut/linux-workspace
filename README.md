@@ -3,18 +3,22 @@
 ## Prerequisites
 - Docker
 
+## Content
 This is a workspace suite in the command line, containing the following setup:
 - Helix
   - with following LSPs: Docker, bash and for the programming language of current branch.
 - Lazygit
 - Ripgrep
 
+Supported languages:
+- Python (*Docker image size: 1,6 GB*)
+
 ## Usage
 Choose a branch and run:
 ```git clone -b <branch-name> --single-branch https://github.com/Hustlenut/linux-workspace.git```
 
 Then build the docker image:
-```docker build -t workspace .```
+```DOCKER_BUILDKIT=1 docker build -t <image_name> --no-cache .```
 
 Run a container and bind it to a workspace of your choice on the host,
 e.g.:
