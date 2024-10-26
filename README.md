@@ -2,6 +2,7 @@
 
 ## Prerequisites
 - Docker
+- xclip/wl-clipboard
 
 ## Content
 This is a workspace suite in the command line, containing the following setup:
@@ -20,6 +21,15 @@ Choose a branch and run:
 Then build the docker image:
 ```DOCKER_BUILDKIT=1 docker build -t <image_name> --no-cache .```
 
+Ensure that the host machine has xclip or wl-clipboard.
 Run a container and bind it to a workspace of your choice on the host,
 e.g.:
-```docker run -v ~/workspace:/root/workspace --rm -p 3000:3000 --name workspace -it <docker_image> sh```
+```
+docker run --rm -p 3000:3000 --name workspace \
+                        -v ~/workspace:/root/workspace \
+                        -v /tmp/.X11-unix:/tmp/.X11-unix \
+                        -v ~/.Xauthority:/root/.Xauthority \
+                        -e DISPLAY=$DISPLAY \
+                        --net=host \
+                        -it <image_name> sh
+```
