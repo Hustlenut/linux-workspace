@@ -65,7 +65,6 @@ RUN apk add --no-cache \
     xclip \
     fish \
     npm \
-    && pip install 'python-lsp-server[all]' \
     && npm install -g bash-language-server dockerfile-language-server-nodejs markdownlint-cli
 
 # Copy Helix configuration files
