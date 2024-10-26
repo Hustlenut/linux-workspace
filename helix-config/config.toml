@@ -1,5 +1,17 @@
 theme = "catppuccin_mocha"
 
+[editor]
+line-number = "relative"
+cursorline = true
+mouse = false
+color-modes = true
+bufferline = "multiple"
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
 [editor.indent-guides]
 render = true
 character = "┊"
