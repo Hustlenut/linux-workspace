@@ -3,6 +3,9 @@
 ## Prerequisites
 - Docker
 - xclip/wl-clipboard
+- Allows local clients (like this docker container) to connect to the X server without authorization, run:
+  - ```xhost +local:```
+  - or add just the ip of the container, for more security.
 
 ## Content
 This is a workspace suite in the command line, containing the following setup:
