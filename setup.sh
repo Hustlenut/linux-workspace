@@ -69,7 +69,7 @@ run_container() {
     CMD=${@:-sh}
     
     docker run --rm --name workspace \
-        -v ~/workspace:/home/$HOST_USER/workspace \
+        -v ~/:/home/$HOST_USER/workspace \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -v ~/.Xauthority:/home/$HOST_USER/.Xauthority \
         -e DISPLAY=$DISPLAY \
