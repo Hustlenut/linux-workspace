@@ -4,9 +4,9 @@
 - Docker
 
 ## Purpose
-This setup provides an isolated environment, designed for easy availability
-and quick teardown on a per-project basis. It serves as a temporary extension
-of the tools available on the (host) operating system.
+This setup offers an isolated, easily deployable, and quickly removable environment for 
+each project. It extends the host system's tools temporarily, using the current host 
+user's credentials to create an equivalent user within the container.
 
 ## Content
 This is a workspace suite in the command line, containing the following setup:
