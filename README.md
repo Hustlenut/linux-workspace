@@ -24,7 +24,7 @@ Choose a branch and run:
 
 ```git clone -b <branch-name> --single-branch https://github.com/Hustlenut/linux-workspace.git```
 
-Available branches/languages:
+Available branches/language setup(s):
 - Python
 
 
