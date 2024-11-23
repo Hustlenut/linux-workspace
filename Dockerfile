@@ -3,24 +3,24 @@
 ##############################################
 FROM alpine:3.20 AS builder
 
-# Set the working directory
 WORKDIR /root
 
-# Install necessary build tools and dependencies
-RUN apk add --no-cache \
-    git \
-    gcc \
-    g++ \
-    make \
-    cmake \
-    ripgrep \
-    xclip \
-    fish \
-    curl \
-    cargo \
-    rust \
-    llvm-dev \
-    musl-dev
+RUN apk update && apk add --no-cache \
+    git=2.45.2-r0 \
+    curl=8.11.0-r2 \
+    gcc=13.2.1_git20240309-r0 \
+    g++=13.2.1_git20240309-r0 \
+    make=4.4.1-r2 \
+    cmake=3.29.3-r0 \
+    cargo=1.78.0-r0 \
+    rust=1.78.0-r0 \
+    llvm-dev=17.0.6-r1 \
+    musl-dev=1.2.5-r0
+
+# Install rustup and set up Rust toolchain
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    source $HOME/.cargo/env && \
+    rustup target add x86_64-unknown-linux-musl
 
 # Set Rust flags for musl-libc compatibility
 ENV RUSTFLAGS="-C target-feature=-crt-static"
@@ -31,8 +31,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN git clone --recurse-submodules https://github.com/helix-editor/helix.git /root/helix
 
 # Compile Helix from source
-RUN cd /root/helix \
-    && cargo install --path helix-term --locked
+RUN cd /root/helix && cargo install --path helix-term --locked
 
 # Fetch and build Helix grammars
 RUN hx --grammar fetch && hx --grammar build
@@ -48,41 +47,55 @@ RUN wget https://github.com/jesseduffield/lazygit/releases/download/v0.41.0/lazy
 ##############################################
 FROM alpine:3.20
 
-# Set the working directory
-WORKDIR /root
+ARG HOST_UID
+ARG HOST_GID
+ARG HOST_USER
+
+# Create a user with the same UID and GID as the host user
+RUN addgroup -g $HOST_GID $HOST_USER && \
+    adduser -D -u $HOST_UID -G $HOST_USER $HOST_USER
+
+# Install runtime dependencies
+RUN apk update && apk add --no-cache \
+    git=2.45.2-r0 \
+    ripgrep=14.1.0-r0 \
+    xclip=0.13-r3 \
+    fish=3.7.1-r0 \
+    curl=8.11.0-r2 \
+    nodejs=20.15.1-r0 \
+    npm=10.8.0-r0 \
+    && npm install -g bash-language-server@5.4.2 dockerfile-language-server-nodejs@0.13.0 markdownlint-cli@0.42.0
 
 # Copy Helix and its runtime from the builder stage
-COPY --from=builder /root/.cargo/bin/hx /root/.cargo/bin/
-COPY --from=builder /root/helix/runtime /root/helix/runtime
-
-# Copy the virtual environment and installed tools
+COPY --from=builder /root/.cargo/bin/hx /usr/local/bin/
+COPY --from=builder /root/helix/runtime /usr/local/share/helix/runtime
 COPY --from=builder /usr/local/bin/lazygit /usr/local/bin/lazygit
 
-# Install runtime dependencies only
-RUN apk add --no-cache \
-    git \
-    ripgrep \
-    xclip \
-    fish \
-    npm \
-    && npm install -g bash-language-server dockerfile-language-server-nodejs markdownlint-cli
-
 # Copy Helix configuration files
-COPY helix-config/config.toml /root/.config/helix/config.toml
-COPY helix-config/language.toml /root/.config/helix/language.toml
+COPY helix-config/config.toml /home/$HOST_USER/.config/helix/config.toml
+COPY helix-config/language.toml /home/$HOST_USER/.config/helix/language.toml
+
+# Set ownership of config files
+RUN chown -R $HOST_USER:$HOST_USER /home/$HOST_USER/.config
 
 # Set environment variables for Helix and shell
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV HELIX_RUNTIME="/root/helix/runtime"
+ENV PATH="/usr/local/bin:/home/$HOST_USER/venv/bin:${PATH}"
+ENV HELIX_RUNTIME="/usr/local/share/helix/runtime"
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 
 # Set Fish shell configuration for PATH
-RUN mkdir -p /root/.config/fish && \
-    echo 'set -gx PATH /root/.cargo/bin $PATH' >> /root/.config/fish/config.fish
+RUN mkdir -p /home/$HOST_USER/.config/fish && \
+    echo 'set -gx PATH /usr/local/bin $PATH' >> /home/$HOST_USER/.config/fish/config.fish && \
+    chown -R $HOST_USER:$HOST_USER /home/$HOST_USER/.config/fish
 
 # Clean up unnecessary files
 RUN rm -rf /var/cache/apk/* /tmp/*
 
-# Activate venv for pylsp and use fish
-ENTRYPOINT ["/bin/sh", "-c", "source /root/venv/bin/activate && exec fish"]
+# Switch to the new user
+USER $HOST_USER
+WORKDIR /home/$HOST_USER
+
+# Activate venv for pylsp and use fish as default shell
+ENTRYPOINT ["/bin/sh", "-c", "source /home/$HOST_USER/venv/bin/activate && exec fish"]
+
