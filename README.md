@@ -24,5 +24,6 @@ Choose a branch and run:
 
 From the base directory build the docker image:
 ```./setup.sh build```
+
 Then run it!
 ```./setup.sh run```
