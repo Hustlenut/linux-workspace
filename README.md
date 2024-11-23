@@ -1,4 +1,4 @@
-# Linux workspace - A command line suite with Docker
+# Linux workspace - Python
 
 ## Prerequisites
 - Docker
@@ -23,7 +23,9 @@ Choose a branch and run:
 ```git clone -b <branch-name> --single-branch https://github.com/Hustlenut/linux-workspace.git```
 
 From the base directory build the docker image:
+
 ```./setup.sh build```
 
 Then run it!
+
 ```./setup.sh run```
