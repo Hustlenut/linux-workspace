@@ -28,7 +28,7 @@ Available branches/languages:
 - Python
 
 
-From the base directory build the docker image:
+From the base directory, build the docker image:
 
 ```./setup.sh build```
 
