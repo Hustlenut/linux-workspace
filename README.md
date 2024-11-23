@@ -21,7 +21,11 @@ Included LSP(s):
 
 ## Usage
 Choose a branch and run:
+
 ```git clone -b <branch-name> --single-branch https://github.com/Hustlenut/linux-workspace.git```
+
+Available branches/languages:
+- Python
 
 
 From the base directory build the docker image:
