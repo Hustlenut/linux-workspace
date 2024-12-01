@@ -1,0 +1,18 @@
+version: '3'
+services:
+  pylsp:
+    build:
+      context: python/
+      dockerfile: Dockerfile
+    image: pylsp:latest
+    volumes:
+      - ${HOME}:${HOME}/workspace
+    ports:
+      - "3333:3333"
+    networks:
+      workspace:
+        ipv4_address: 10.89.0.5
+
+networks:
+  workspace:
+    external: true

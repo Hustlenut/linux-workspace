@@ -1,0 +1,7 @@
+[[language]]
+name = "python"
+language-servers = ["pylsp"]
+
+ [language-server.pylsp]
+ command = "pylsp"
+ args = []

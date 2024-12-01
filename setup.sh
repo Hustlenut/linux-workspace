@@ -1,13 +1,17 @@
 #!/bin/bash
+ 
+# Script to build Podman containers and install shell functions for the current user
 
-# Script to build and run a Docker container as the current host user
+registry_prefix="localhost"
+helix_version="24.7"
+current_dir=$PWD
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 [build|run] [command]"
-    echo "  build: Build the Docker image"
-    echo "  run: Run the Docker container"
-    echo "  [command]: Optional command to run in the container (default: sh)"
+    echo "Usage: $0 [build|install-bash|install-fish]"
+    echo "  build: Build the Podman images"
+    echo "  install-bash: Install hx function in .bashrc"
+    echo "  install-fish: Install hx function in Fish config"
     exit 1
 }
 
@@ -16,26 +20,17 @@ if [ $# -lt 1 ]; then
     usage
 fi
 
-# Get current user's UID and GID
-HOST_UID=$(id -u)
-HOST_GID=$(id -g)
-
-# Get current username
-HOST_USER=$(whoami)
-
-# Image name
-IMAGE_NAME="linux-workspace"
-
-# Function to check if the Docker image exists
+# Function to check if the Podman images exist
 check_image_exists() {
-    if [[ "$(docker images -q $IMAGE_NAME 2> /dev/null)" == "" ]]; then
-        return 1  # Image does not exist
+    if [[ "$(podman images -q helix:$helix_version 2> /dev/null)" == "" ]] || \
+       [[ "$(podman images -q pylsp:latest 2> /dev/null)" == "" ]]; then
+        return 1  # One or both images do not exist
     else
-        return 0  # Image exists
+        return 0  # Both images exist
     fi
 }
 
-# Function to check and set xhost
+# Function to check and set xhost for X11 forwarding
 check_xhost() {
     if ! xhost &>/dev/null; then
         echo "xhost command not found. Please install xorg-xhost package."
@@ -48,53 +43,79 @@ check_xhost() {
     fi
 }
 
-# Function to build the Docker image
-build_image() {
-    echo "Building Docker image: $IMAGE_NAME"
-    DOCKER_BUILDKIT=1 docker build \
-        --build-arg HOST_UID=$HOST_UID \
-        --build-arg HOST_GID=$HOST_GID \
-        --build-arg HOST_USER=$HOST_USER \
-        -t $IMAGE_NAME --no-cache .
-}
-
-# Run the Docker container
-run_container() {
-    echo "Running Docker container as user $HOST_USER (UID:$HOST_UID, GID:$HOST_GID)"
-    
-    # Check and set xhost
+# Build using podman-compose
+build() {
+    # Check xhost settings for X11 forwarding
     check_xhost
-    
-    # Default command if none provided
-    CMD=${@:-sh}
-    
-    docker run --rm --name workspace \
-        -v ~/:/home/$HOST_USER/workspace \
-        -v /tmp/.X11-unix:/tmp/.X11-unix \
-        -v ~/.Xauthority:/home/$HOST_USER/.Xauthority \
-        -e DISPLAY=$DISPLAY \
-        -e HOME=/home/$HOST_USER \
-	-e HOST_USER=$HOST_USER \
-        --net=host \
-        --user $HOST_UID:$HOST_GID \
-        -it $IMAGE_NAME $CMD
+
+    # Check if the Podman image exists before building
+    if check_image_exists; then
+        echo "Podman images 'helix:$helix_version' and 'pylsp:latest' already exist. Skipping build."
+    else
+        echo "Building Podman images..."
+        podman network create --subnet 10.89.0.0/24 workspace
+	      podman build -f helix/Dockerfile -t helix:$helix_version helix/
+        podman-compose -f podman-compose.yml build
+    fi
 }
 
-# Main logic
+# Install hx function in .bashrc
+install_bash_function() {
+    local BASH_FUNC="hx() {
+        podman-compose -f ${PWD}/podman-compose.yml up -d;
+        podman-compose -f ${PWD}/podman-compose.yml exec helix hx \"\$@\";
+        podman-compose -f ${PWD}/podman-compose.yml down;
+    }"
+
+    # Append function to .bashrc if it doesn't already exist
+    if ! grep -Fxq "$BASH_FUNC" ~/.bashrc; then
+        echo "$BASH_FUNC" >> ~/.bashrc
+        echo "hx function installed in .bashrc. Please run 'source ~/.bashrc' to apply changes."
+    else
+        echo "hx function already exists in .bashrc."
+    fi
+}
+
+# Install hx function in Fish config
+install_fish_function() {
+    local FISH_FUNC="function hx
+    ## Start the container in detached mode
+    podman-compose -f /home/hustlenut/linux-workspace/podman-compose.yml up -d
+
+    # Execute Helix inside the running container
+    podman run \
+        --entrypoint hx \
+        -it \
+        -v $PWD:$PWD \
+        --workdir=$PWD \
+        -v $HOME/linux-workspace/helix/helix-config:/home/helix_user/.config/helix \
+        -e DISPLAY=$DISPLAY \
+        $registry_prefix/helix:$helix_version \
+        $argv
+    end"
+
+    # Append function to Fish config if it doesn't already exist
+    if ! grep -Fxq "$FISH_FUNC" ~/.config/fish/config.fish; then
+        echo "$FISH_FUNC" >> ~/.config/fish/config.fish
+        echo "hx function installed in Fish config. Please restart your Fish shell or run 'source ~/.config/fish/config.fish' to apply changes."
+    else
+        echo "hx function already exists in Fish config."
+    fi
+}
+
+# Main logic to handle commands.
 case "$1" in
     build)
-        if check_image_exists; then
-            echo "Docker image '$IMAGE_NAME' already exists. Skipping build."
-        else
-            build_image
-        fi
+        build   # Call the build function.
         ;;
-    run)
-        shift
-        run_container "$@"
+    install-bash)
+        install_bash_function   # Call the bash installation function.
+        ;;
+    install-fish)
+        install_fish_function   # Call the fish installation function.
         ;;
     *)
-        usage
+        usage   # Display usage information for invalid commands.
         ;;
 esac
 
